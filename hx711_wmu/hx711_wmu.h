@@ -1,7 +1,7 @@
 /*
 *
 *	Weight measurement unit on hx711 chip
-*	STM32F103C8T6 using as MCU
+*
 */
 
 #ifndef _HX_711_WMU_H
@@ -16,15 +16,13 @@
 #define WMU_PORT				GPIOB
 #define WMU_PORT_CLK			RCC_APB2Periph_GPIOB
 
-#define SAMPLES					5	//amount of measurements
+#define SAMPLES					5
 
-/*	Linear formula up to 500 gr / 2kg tenso
-	f(x) = 0.0009566078x - 8017.9185049363
-	R² = 0.9999987604
-*/
+// Linear formula up to 500 gr / 2kg tenso
+// f(x) = 0.0009566078x - 8017.9185049363
+// R² = 0.9999987604
 #define WMU_LINEAR_WEIGHT(ADC)			((0.0009566078 * ADC) - 8017.9185049363)
-#define WMU_LINEAR_ADC_0G				8381577 //adc value with zero grams used for weight correction
-
+#define WMU_LINEAR_ADC_0G				8381577
 
 /*
  @brief : init MCU GPIO
@@ -42,18 +40,17 @@ uint32_t WMU_get_ADC_val();
 
 /*
  @brief : function for weight calculation in grams
- @param : receives correction value from WMU_get_correction()
+ @param : none
  @retval : weight in grams
 */
-double WMU_get_weight_g(int32_t w_correction);
+double WMU_get_weight_g();
 
 /*
- @brief :this function is sort of tare procedure but return difference between equation values and current values.
-		 This value shuld be applied in weight calculation function as param
+ @brief : Tare procedure. Calculate difference between original adc value (25 C \ 0 g) and current,
+ @ also refresh wmu_correction var. wich used in weight calculation
  @param : none
- @retval : difference between equation values and current values.
+ @retval : none
 */
-int32_t WMU_get_correction();
-
+void WMU_tare(void);
 
 #endif

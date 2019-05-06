@@ -6,13 +6,14 @@
 
 #include "hx711_wmu.h"
 
+static int32_t wmu_correction;
 
 void WMU_Init()
 {
 	GPIO_InitTypeDef wmu_GPIO;
 
 	//CLOCKING to periph
-	RCC->APB2ENR |= WMU_PORT_CLK;		//clock to port
+	RCC->APB2ENR |= WMU_PORT_CLK;			//clock to port
 
 	// GPIOB CLK
 	memset(&wmu_GPIO, 0, sizeof(wmu_GPIO));	//clear struct
@@ -27,7 +28,8 @@ void WMU_Init()
 	wmu_GPIO.GPIO_Speed = GPIO_Speed_2MHz;
 	GPIO_Init(WMU_PORT, &wmu_GPIO);
 
-	GPIO_SetBits(WMU_PORT, WMU_CLK_PIN);	// turn off the chip
+	wmu_correction = 0; 					//reset correction
+	GPIO_SetBits(WMU_PORT, WMU_CLK_PIN);	//turn off the chip
 }
 
 
@@ -61,7 +63,7 @@ uint32_t WMU_get_ADC_val()
 }
 
 
-double WMU_get_weight_g(int32_t w_correction)
+double WMU_get_weight_g(void)
 {
 	int32_t mid_val = 0;
 	for (uint8_t i = 0; i < SAMPLES; i++)
@@ -69,12 +71,12 @@ double WMU_get_weight_g(int32_t w_correction)
 		mid_val += WMU_get_ADC_val();
 	}
 	mid_val /= SAMPLES;
-	mid_val += w_correction;
+	mid_val += wmu_correction;
 	return WMU_LINEAR_WEIGHT(mid_val);
 }
 
 
-int32_t WMU_get_correction()
+void WMU_tare(void)
 {
 	int32_t mid_val = 0;
 	for (uint8_t i = 0; i < SAMPLES; i++)
@@ -82,8 +84,7 @@ int32_t WMU_get_correction()
 		mid_val += WMU_get_ADC_val();
 	}
 	mid_val /= SAMPLES;
-
-	return WMU_LINEAR_ADC_0G - mid_val;
+	wmu_correction = WMU_LINEAR_ADC_0G - mid_val;
 }
 
 
