@@ -48,8 +48,8 @@
 #define DATA_GPIO_CLOCKING_DB8_15		RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB, ENABLE)
 
 
-#define LCD_CE_HIGH						CTL_PORT->BRR |= GPIO_CE
-#define LCD_CE_LOW						CTL_PORT->ODR |= GPIO_CE
+#define LCD_CE_HIGH						CTL_PORT->ODR |= GPIO_CE
+#define LCD_CE_LOW						CTL_PORT->BRR |= GPIO_CE
 #define LCD_WR_HIGH						CTL_PORT->ODR |= GPIO_WR
 #define LCD_WR_LOW						CTL_PORT->BRR |= GPIO_WR
 #define LCD_RS_HIGH						CTL_PORT->ODR |= GPIO_RS
