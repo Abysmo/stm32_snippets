@@ -34,11 +34,11 @@ const int16_t ili9488_init_code[] =
 
 void SPI_TXRX_Byte(uint8_t byte)
 {
-	while((SPI1->SR & SPI_SR_BSY) && (!(SPI1->SR & SPI_SR_TXE)));
-	SPI1->DR = byte;
+	while((SPI_X->SR & SPI_SR_BSY) && (!(SPI_X->SR & SPI_SR_TXE)));
+	SPI_X->DR = byte;
 
-//	while(!(SPI1->SR & SPI_SR_RXNE));
-//	return SPI1->DR;
+//	while(!(SPI_X->SR & SPI_SR_RXNE));
+//	return SPI_X->DR;
 }
 
 void Send_REG(uint8_t reg)
