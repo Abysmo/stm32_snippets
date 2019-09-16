@@ -99,7 +99,8 @@ uint8_t calibrate_touch (touch_param_t * touch, uint16_t screen_width, uint16_t 
 
 	print_string("- CALIBRATION -", 75, 100, 0);
 	print_string("Tap + with pen on top left and", 20, 130, 0);
-	print_string("bottom right corners", 50, 150, 0);
+	print_string("bottom right corners untill", 20, 150, 0);
+	print_string("they disappear", 50, 170, 0);
 
 
 	print_string("+", 5, 0, 0);
