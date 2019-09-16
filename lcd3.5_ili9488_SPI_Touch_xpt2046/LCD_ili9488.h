@@ -8,7 +8,7 @@
 #include "timer_ctl.h"
 #include "stm32f10x_spi.h"
 
-
+/* ~~~~~~~~~ SCREEN SELECT ~~~~~~~~~*/
 #define SCREEN_PORTRAIT
 //#define SCREEN_ALBUM
 
@@ -34,8 +34,13 @@
 #define LCD_RST_HIGH					CTL_PORT->ODR |= GPIO_RST
 #define LCD_RST_LOW						CTL_PORT->BRR |= GPIO_RST
 
-#define LCD_WIDTH						320
-#define LCD_HEIGHT						480
+#ifdef SCREEN_PORTRAIT
+	#define LCD_WIDTH						320
+	#define LCD_HEIGHT						480
+#else
+	#define LCD_WIDTH						480
+	#define LCD_HEIGHT						320
+#endif
 
 
 #define WHITE							0xFFFF
@@ -62,6 +67,7 @@
 #define LBBLUE							0X2B12
 
 
+
 void Send_REG(uint8_t reg);
 void Send_DATA_8(uint8_t data);
 void Send_DATA_16(uint16_t data);
@@ -74,5 +80,9 @@ void lcd_puts(const char *str, int x, int y, uint16_t fg_color, uint16_t bg_colo
 void draw_rectangle(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t color);
 void lcd_fill(uint16_t color);
 void SPI_TXRX_Byte(uint8_t byte);
+
+
+void puts_wrapper(const char *str, uint16_t x, uint16_t y, uint16_t color);
+
 
 #endif

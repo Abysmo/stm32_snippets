@@ -34,11 +34,11 @@ const int16_t ili9488_init_code[] =
 
 void SPI_TXRX_Byte(uint8_t byte)
 {
-	while((SPI_X->SR & SPI_SR_BSY) && (!(SPI_X->SR & SPI_SR_TXE)));
-	SPI_X->DR = byte;
+	while((SPI1->SR & SPI_SR_BSY) && (!(SPI1->SR & SPI_SR_TXE)));
+	SPI1->DR = byte;
 
-//	while(!(SPI_X->SR & SPI_SR_RXNE));
-//	return SPI_X->DR;
+//	while(!(SPI1->SR & SPI_SR_RXNE));
+//	return SPI1->DR;
 }
 
 void Send_REG(uint8_t reg)
@@ -118,6 +118,7 @@ void LCD_FullInit(void)
 	SPI_Cmd(SPI_X, ENABLE);
 
 	init_LCD_ili9488(ili9488_init_code);
+	lcd_fill(WHITE);
 
 }
 
@@ -192,19 +193,14 @@ void lcd_putc(unsigned char c, uint16_t x, uint16_t y, uint16_t fg_color, uint16
 	uint16_t tmp_h = (uint16_t)font->f_height;
 
 /* Checking - are char fit screen ? Ignore if not */
-#ifdef SCREEN_PORTRAIT
+
 	if ((x + tmp_w - 1 ) > LCD_WIDTH)
 		return;
 	if ((y + tmp_h - 1 ) > LCD_HEIGHT)
 		return;
-#endif
 
-#ifdef SCREEN_ALBUM
-	if ((x + tmp_w - 1 ) > LCD_HEIGHT)
-		return;
-	if ((y + tmp_h - 1 ) > LCD_WIDTH)
-		return;
-#endif
+
+
 
 	Send_REG(0x2A);				/* send memory area width */
 	Send_DATA_16(x);			/* start point low bits */
@@ -284,6 +280,12 @@ void lcd_puts(const char *str, int x, int y, uint16_t fg_color, uint16_t bg_colo
 	}
 }
 
+/*puts wrapper for calibration*/
+void puts_wrapper(const char *str, uint16_t x, uint16_t y, uint16_t color)
+{
+	lcd_puts(str, x, y, color, WHITE, &font_ubuntu18);
+}
+
 void draw_rectangle(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint16_t color)
 {
 	Send_REG(0x2A);
@@ -307,28 +309,16 @@ void draw_rectangle(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uin
 void lcd_fill(uint16_t color)
 {
 	Send_REG(0x28); /*turn off screen*/
-#ifdef SCREEN_ALBUM
+
 	/* Set X coord */
 	Send_REG(0x2A);
 	Send_DATA_16(0);
-	Send_DATA_16(480);
+	Send_DATA_16(LCD_WIDTH);
 	/* Set Y coord */
 	Send_REG(0x2B);
 	Send_DATA_16(0);
-	Send_DATA_16(320);
+	Send_DATA_16(LCD_HEIGHT);
 
-#endif
-
-#ifdef SCREEN_PORTRAIT
-	/* Set X coord */
-	Send_REG(0x2A);
-	Send_DATA_16(0);
-	Send_DATA_16(320);
-	/* Set Y coord */
-	Send_REG(0x2B);
-	Send_DATA_16(0);
-	Send_DATA_16(480);
-#endif
 
 	/* Write data */
 	Send_REG(0x2C);
