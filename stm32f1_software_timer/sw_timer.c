@@ -52,16 +52,27 @@ timer_t * free_timer(timer_t * timer)
 @ param : none
 @ retval : none
 */
-void timers_handler(void)
+void timers_handler(void) /*TODO:COMENTS, TESTS*/
 {
 	for (uint8_t i = 0;i < MAX_TIMERS; i++) /*timers passthrough*/
 	{
-		if(timers_array[i].state == TIMER_DONE)
+		if(timers_array[i].state == TIMER_EVENT)
 		{
 			if (timers_array[i].fn)
-			{
 				timers_array[i].fn(timers_array[i].callback_param); /*use callback with assigned parameters*/
+
+			if (timers_array[i].cycles == TIMER_CYCLES_INFINITE)
+			{
+				timers_array[i].state = TIMER_TICKING;
+				continue;
+			}
+			timers_array[i].cycles -=1;
+			if(!timers_array[i].cycles) /*timer done*/
 				timers_array[i].state = TIMER_IDLE;
+			else /*reloading timer for new cycle*/
+			{
+				timers_array[i].end_val_ms  = timers_array[i].val_ms + global_tick_ms_var;
+				timers_array[i].state = TIMER_TICKING;
 			}
 		}
 	}
@@ -81,7 +92,7 @@ void SysTick_Handler(void)
 		{
 			if (global_tick_ms_var >= timers_array[i].end_val_ms)
 			{
-				timers_array[i].state = TIMER_DONE; /*timer is done*/
+				timers_array[i].state = TIMER_EVENT; /*timer is done*/
 			}
 		}
 	}
@@ -104,16 +115,30 @@ void delay_ms(uint16_t ms)
 @ param : Milliseconds for timeout, pointer on timer struct, callback function, callback parameters.
 @ retval : none
 */
-void timer_start(uint16_t ms, timer_t * timer, timer_callback_t callback_function, void * callback_fn_param)
+timer_t * timer_start(timer_t * timer, uint32_t ms, uint32_t cycles, timer_callback_t callback_function, void * callback_fn_param)
 {
+	timer->val_ms = ms;
+	timer->cycles = cycles;
 	timer->fn = callback_function;
 	timer->callback_param = callback_fn_param;
 	timer->end_val_ms = global_tick_ms_var + ms;
 	timer->state = TIMER_TICKING;
+	return timer;
 }
 
 /*
-@ brief : initialize system clock on 72mhz using external oscillator 8mhz
+@ brief : Function what stops timer
+@ param : timer struct pointer what should be stopped
+@ retval : timer struct pointer what was stopped
+*/
+timer_t * timer_stop(timer_t * timer)
+{
+	timer->state = TIMER_IDLE;
+	return timer;
+}
+
+/*
+@ brief : initialize system clock on 72mhz using external oscillator 8Mhz
 @ param : none
 @ retval : none
 */

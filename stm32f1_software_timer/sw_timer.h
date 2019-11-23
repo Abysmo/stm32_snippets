@@ -13,17 +13,21 @@
 
 
 /*timers state*/
-#define TIMER_FREE		0
-#define TIMER_IDLE		1
-#define TIMER_TICKING	2
-#define TIMER_DONE		3
+#define TIMER_FREE					0
+#define TIMER_IDLE					1
+#define TIMER_TICKING				2
+#define TIMER_EVENT					3
+/*infinite cycles constant*/
+#define TIMER_CYCLES_INFINITE		0xFF
 
 
 typedef void (*timer_callback_t)(void * param);
 
 typedef struct
 {
+	uint32_t val_ms;
 	uint32_t end_val_ms;
+	uint32_t cycles;
 	volatile uint8_t state;
 	timer_callback_t fn;
 	void * callback_param;
@@ -38,39 +42,13 @@ void timers_init(void);
 timer_t * add_timer(void);	
 timer_t * free_timer(timer_t * timer); 
 void timers_handler();	
-
-
 void delay_ms(uint16_t ms); /**/
-void timer_start(uint16_t ms, timer_t * timer, timer_callback_t callback_function, void * callback_fn_param); /*start timer with defined time, callback and params*/
+timer_t * timer_start(timer_t * timer, uint32_t ms, uint32_t cycles, timer_callback_t callback_function, void * callback_fn_param); /*~~~~~~~~~~~~~~~~~~~~~TODO: CYCLES*/
+timer_t * timer_stop(timer_t timer);
 
 /*EXAMPLE
 
-void func1 (void * data)
-{
-	*data = 1;
-}
 
-
-int main(void)
-{
-
-	uint8_t flag = 0;
-	timer_t * timeout_tim = add_timer();
-	timers_init();
-	
-	delay_ms(1000);
-	
-	while(1)
-	{
-		flag = 0;
-		timer_start(1000, timeout_tim, func1, (void*)&flag)
-		while(!flag)
-		{
-			timers_handler();
-		}
-	}
-
-}
 
 
 
