@@ -1,7 +1,7 @@
 #include "sw_timer.h"
 
 /*
-@ brief :  72Mhz system clock init with external oscillator 8mhz (most popular configuration for stm32). Should called first
+@ brief :  initialize system clock, systick and clear timers struct array. Should called before work.
 @ param : none
 @ retval : none
 */
