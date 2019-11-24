@@ -34,7 +34,7 @@ typedef struct
 }timer_t; /*timer struct*/
 
 timer_t timers_array[MAX_TIMERS]; /*timers array*/
-volatile uint32_t global_tick_ms_var; /*millisecond tick var, advancing by systick handler*/
+volatile uint32_t global_tick_ms_var; /*millisecond tick var, advancing by systick_handler*/
 
 
 void ClockInit72MhzHSE(void); 
@@ -42,9 +42,9 @@ void timers_init(void);
 timer_t * add_timer(void);	
 timer_t * free_timer(timer_t * timer); 
 void timers_handler();	
-void delay_ms(uint16_t ms); /**/
-timer_t * timer_start(timer_t * timer, uint32_t ms, uint32_t cycles, timer_callback_t callback_function, void * callback_fn_param); /*~~~~~~~~~~~~~~~~~~~~~TODO: CYCLES*/
-timer_t * timer_stop(timer_t timer);
+void delay_ms(uint16_t ms);
+timer_t * timer_start(timer_t * timer, uint32_t ms, uint32_t cycles, timer_callback_t callback_function, void * callback_fn_param);
+timer_t * timer_stop(timer_t * timer);
 
 /*EXAMPLE
 
