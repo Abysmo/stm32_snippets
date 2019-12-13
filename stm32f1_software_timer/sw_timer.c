@@ -34,8 +34,7 @@ timer_t * add_timer(void)
 }
 
 /*
-@ brief : release unused timer from array and free slot for new timer (theoretically this function not need at all
-@ 		because all params you pass when call timer_start() function).
+@ brief : release unused timer from array and free slot for new timer
 @ param : pointer on a timer struct what should be freed
 @ retval : pointer on a timer struct what is freed by this call
 */
@@ -49,16 +48,16 @@ timer_t * free_timer(timer_t * timer)
 @ brief : Handler function. Check what timers is finished their count and invoke callbacks for this timers if its assigned.
 @		If there is no callback - just set flag (TIMER_IDLE) if no cycles left in (volatile uint8_t state;) field in current structure.
 @		This function should be called time to time or in Idle cycle.
-@		If you need maintain only few timers - you can merge this function with SysTick_Handler() or simply add timers_handler()
-@		call in SysTick_Handler() body.
 @ param : none
 @ retval : none
 */
-void timers_handler(void) /*TODO:COMENTS, TESTS*/
+void timers_handler(void)
 {
 	for (uint8_t i = 0;i < MAX_TIMERS; i++) /*timers passthrough*/
 	{
-		if(timers_array[i].state == TIMER_EVENT) /*callback execution*/
+		if (timers_array[i].state != TIMER_TICKING) /*skip idle and free timers*/
+			continue;
+		if(timers_array[i].val_ms >= timers_array[i].end_val_ms) /*callback execution*/
 		{
 			if (timers_array[i].fn)
 				timers_array[i].fn(timers_array[i].callback_param); /*use callback with assigned parameters*/
@@ -66,8 +65,7 @@ void timers_handler(void) /*TODO:COMENTS, TESTS*/
 			/*cycles handling*/
 			if (timers_array[i].cycles == TIMER_CYCLES_INFINITE)
 			{
-				timers_array[i].end_val_ms  = timers_array[i].val_ms + global_tick_ms_var; /*reload timer*/
-				timers_array[i].state = TIMER_TICKING; /*set timer to working state*/
+				timers_array[i].val_ms  = 0; /*reload timer*/
 				continue;
 			}
 			timers_array[i].cycles -=1;
@@ -75,63 +73,60 @@ void timers_handler(void) /*TODO:COMENTS, TESTS*/
 				timers_array[i].state = TIMER_IDLE; /*disable timer*/
 			else /*else reloading timer for new cycle*/
 			{
-				timers_array[i].end_val_ms  = timers_array[i].val_ms + global_tick_ms_var; /*reload timer*/
-				timers_array[i].state = TIMER_TICKING; /*set timer to working state*/
+				timers_array[i].val_ms  = 0; /*reload timer*/
 			}
 		}
 	}
 }
 
 /*
-@ brief : Systick handler. Increment global tick variable, set TIMER_DONE flag if counter is done.
+@ brief : Systick handler advance timers values and delay var
 @ param : none
 @ retval : none
 */
 void SysTick_Handler(void)
 {
-	global_tick_ms_var++;
+	delay_var++;
 	for (uint8_t i = 0; i < MAX_TIMERS; i++)
 	{
 		if (timers_array[i].state == TIMER_TICKING)
 		{
-			if (global_tick_ms_var >= timers_array[i].end_val_ms)
-			{
-				timers_array[i].state = TIMER_EVENT; /*count is complete*/
-			}
+			timers_array[i].val_ms++;
 		}
 	}
 }
 
 
 /*
-@ brief : simple delay function, no need to create timer for use
+@ brief : simple delay function, no need to create timer for use. Just stops code execution on specified amount of time.
 @ param : milliseconds
 @ retval : none
 */
-void delay_ms(uint16_t ms)
+void delay_ms(uint32_t ms)
 {
-	uint32_t end = global_tick_ms_var + ms;
-	while(global_tick_ms_var != end);
+	uint32_t end = delay_var + ms;
+	while(delay_var != end)
+		asm("nop");
 }
 
 /*
-@ brief : Function for starting specified timer with defined parameters. Cycles can be infinite (use TIMER_CYCLES_INFINITE constant in cycles field)
-@ param : Milliseconds for timeout, pointer on timer struct, callback function, callback parameters.
+@ brief : Function for starting specified timer with defined parameters. Cycles can be infinite (pass TIMER_CYCLES_INFINITE constant in cycles param)
+@ param : Timer pointer, milliseconds for timeout, amount of cycles, callback function pt, callback parameters pt.
 @ retval : none
 */
 timer_t * timer_start(timer_t * timer, uint32_t ms, uint32_t cycles, timer_callback_t callback_function, void * callback_fn_param)
 {
-	timer->val_ms = ms;
+	timer->val_ms = 0;
+	timer->end_val_ms = ms;
 	timer->cycles = cycles;
 	timer->fn = callback_function;
 	timer->callback_param = callback_fn_param;
-	timer->end_val_ms = global_tick_ms_var + ms;
 	timer->state = TIMER_TICKING;
 	return timer;
 }
 
 /*
-@ brief : Function what stops timer
+@ brief : Stop timer function
 @ param : timer struct pointer what should be stopped
 @ retval : timer struct pointer what was stopped
 */
@@ -142,7 +137,7 @@ timer_t * timer_stop(timer_t * timer)
 }
 
 /*
-@ brief : initialize system clock on 72mhz using external oscillator 8Mhz
+@ brief : initialize system clock on 72Mhz using external oscillator 8Mhz
 @ param : none
 @ retval : none
 */
