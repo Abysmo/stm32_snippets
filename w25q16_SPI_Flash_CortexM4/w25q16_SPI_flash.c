@@ -108,11 +108,11 @@ void FlashGetDevManID(uint8_t * TwoByteBuffer)
 
 uint8_t SPI_TXRX_Byte(uint8_t byte)
 {
-	while((SPI1->SR & SPI_SR_BSY) && (!(SPI1->SR & SPI_SR_TXE)));
-	SPI1->DR = byte;
+	while((SPI_TYPEDEF->SR & SPI_SR_BSY) && (!(SPI_TYPEDEF->SR & SPI_SR_TXE)));
+	SPI_TYPEDEF->DR = byte;
 
-	while(!(SPI1->SR & SPI_SR_RXNE));
-	return SPI1->DR;
+	while(!(SPI_TYPEDEF->SR & SPI_SR_RXNE));
+	return SPI_TYPEDEF->DR;
 }
 
 
