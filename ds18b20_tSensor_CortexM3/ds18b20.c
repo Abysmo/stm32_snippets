@@ -1,7 +1,14 @@
 #include "ds18b20.h"
 
 
-uint8_t ds18b20_reset_seq(void)
+void delay_us(uint16_t us)
+{
+	volatile uint32_t core_ticks_fin = (*DWT_CYCCNT) + (us * 72);
+	while ((core_ticks_fin - (*DWT_CYCCNT)) < (us * 72));
+}
+
+
+static uint8_t ds18b20_reset_seq(void)
 {
 	transmitter_mode();		// set the pin as output
 	DATA_PIN_LOW;			// pull the pin low
@@ -78,9 +85,7 @@ float onewire_get_temp_c (void)
 		return SENSOR_TIMEOUT_ERROR;
 	onewire_write (0xCC);  // skip ROM
 	onewire_write (0x44);  // convert t
-	//delay_ms(max_conv_time_ms);
 
-	/*test*/
 	for (int32_t timeout_us = max_conv_time_us; timeout_us < 0; timeout_us -= 65)
 	{
 		transmitter_mode();		// set as output
@@ -91,7 +96,6 @@ float onewire_get_temp_c (void)
 			break;
 		delay_us(65);
 	}
-	/*test*/
 
 	if (ds18b20_reset_seq())
 		return SENSOR_TIMEOUT_ERROR;
@@ -101,7 +105,7 @@ float onewire_get_temp_c (void)
 	uint8_t temp_l = onewire_read();
 	uint8_t temp_h = onewire_read();
 	uint16_t temp = (temp_h<<8)|temp_l;
-	return (float)temp/16; //
+	return (float)temp/16; 
 }
 
 static void receiver_mode()
@@ -116,8 +120,20 @@ static void transmitter_mode()
 	DATA_PORT->CRH |= DATA_PIN_TRANSMITTER_MASK;
 }
 
-void ds18b20_setup(void)
+void ds18b20_setup(uint8_t timer_resolution)
 {
+	/*us timer Setup*/
+	/* unlock access to DWT (ITM, etc.)registers */
+	*LAR = 0xC5ACCE55;
+	/* enable the use DWT */
+	*DEMCR = *DEMCR | 0x01000000;
+	/* Reset cycle counter */
+	*DWT_CYCCNT = 0;
+	/* enable cycle counter */
+	*DWT_CONTROL = *DWT_CONTROL | 1 ;
+
+
+	/*periph setup*/
 	GPIO_InitTypeDef GPIO_InitStructure;
 	RCC->APB2ENR |= RCC_APB2_PORT;
 
@@ -125,11 +141,12 @@ void ds18b20_setup(void)
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_Pin = DATA_PIN;
 	GPIO_Init(DATA_PORT, &GPIO_InitStructure);
-	max_conv_time_us = 750000;
+	
+	set_ds18b20_ADC_resolution(timer_resolution);
 
 }
 
-uint8_t set_ADC_resolution(uint8_t resolution)
+uint8_t set_ds18b20_ADC_resolution(uint8_t resolution)
 {
 	if(ds18b20_reset_seq())
 		return 1;
@@ -148,6 +165,5 @@ uint8_t set_ADC_resolution(uint8_t resolution)
 	onewire_write(0x00);		/* first data register */
 	onewire_write(0x00);		/* second data register */
 	onewire_write(resolution);	/* configuration register */
-
 	return 0;
 }
