@@ -120,17 +120,17 @@ static void transmitter_mode()
 	DATA_PORT->CRH |= DATA_PIN_TRANSMITTER_MASK;
 }
 
-void ds18b20_setup(uint8_t timer_resolution)
+void ds18b20_setup(uint8_t sensor_resolution)
 {
 	/*us timer Setup*/
 	/* unlock access to DWT (ITM, etc.)registers */
 	*LAR = 0xC5ACCE55;
 	/* enable the use DWT */
-	*DEMCR = *DEMCR | 0x01000000;
+	*DEMCR |= 0x01000000;
 	/* Reset cycle counter */
 	*DWT_CYCCNT = 0;
 	/* enable cycle counter */
-	*DWT_CONTROL = *DWT_CONTROL | 1 ;
+	*DWT_CONTROL |= 1 ;
 
 
 	/*periph setup*/
@@ -142,7 +142,7 @@ void ds18b20_setup(uint8_t timer_resolution)
 	GPIO_InitStructure.GPIO_Pin = DATA_PIN;
 	GPIO_Init(DATA_PORT, &GPIO_InitStructure);
 	
-	set_ds18b20_ADC_resolution(timer_resolution);
+	set_ds18b20_ADC_resolution(sensor_resolution);
 
 }
 
