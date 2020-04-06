@@ -7,9 +7,21 @@
 */
 void timers_init(void)
 {
+	ms_var = 0;
 	ClockInit72MhzHSE();
 	SysTick_Config(SystemCoreClock / 1000);
 	memset(timers_array,'\0', sizeof(timers_array));
+
+
+	/* unlock access to DWT (ITM, etc.)registers */
+	*LAR = 0xC5ACCE55;
+	/* enable the use DWT */
+	*DEMCR = *DEMCR | 0x01000000;
+	/* Reset cycle counter */
+	*DWT_CYCCNT = 0;
+	/* enable cycle counter */
+	*DWT_CONTROL = *DWT_CONTROL | 1 ;
+
 }
 
 /*
@@ -36,12 +48,17 @@ timer_t * add_timer(void)
 /*
 @ brief : release unused timer from array and free slot for new timer
 @ param : pointer on a timer struct what should be freed
-@ retval : pointer on a timer struct what is freed by this call
+@ retval : pointer on a timer struct what is freed by this call or NULL if timer already free or bad ptr.
 */
 timer_t * free_timer(timer_t * timer)
 {
-	memset (timer, '\0', sizeof(timer_t));
-	return timer;
+	if (timer->state)
+	{
+		memset (timer, '\0', sizeof(timer_t));
+		return timer;
+	}
+	else
+		return NULL;
 }
 
 /*
@@ -55,9 +72,10 @@ void timers_handler(void)
 {
 	for (uint8_t i = 0;i < MAX_TIMERS; i++) /*timers passthrough*/
 	{
-		if (timers_array[i].state != TIMER_TICKING) /*skip idle and free timers*/
+		if (timers_array[i].state != TIMER_RUNNING) /*skip idle, paused and non used timers*/
 			continue;
-		if(timers_array[i].val_ms >= timers_array[i].end_val_ms) /*callback execution*/
+		//if((ms_var - timers_array[i].end_val_ms) >= timers_array[i].val_ms)
+		if(ms_var >= timers_array[i].end_val_ms) /*timeout - callback execution*/
 		{
 			if (timers_array[i].fn)
 				timers_array[i].fn(timers_array[i].callback_param); /*use callback with assigned parameters*/
@@ -65,7 +83,7 @@ void timers_handler(void)
 			/*cycles handling*/
 			if (timers_array[i].cycles == TIMER_CYCLES_INFINITE)
 			{
-				timers_array[i].val_ms  = 0; /*reload timer*/
+				timers_array[i].end_val_ms  = timers_array[i].val_ms + ms_var; /*reload timer*/
 				continue;
 			}
 			timers_array[i].cycles -=1;
@@ -73,29 +91,21 @@ void timers_handler(void)
 				timers_array[i].state = TIMER_IDLE; /*disable timer*/
 			else /*else reloading timer for new cycle*/
 			{
-				timers_array[i].val_ms  = 0; /*reload timer*/
+				timers_array[i].end_val_ms  = timers_array[i].val_ms + ms_var; /*reload timer*/
 			}
 		}
 	}
 }
 
 /*
-@ brief : Systick handler advance timers values and delay var
+@ brief : Systick handler advance "ms_var" variable for timers
 @ param : none
 @ retval : none
 */
 void SysTick_Handler(void)
 {
-	delay_var++;
-	for (uint8_t i = 0; i < MAX_TIMERS; i++)
-	{
-		if (timers_array[i].state == TIMER_TICKING)
-		{
-			timers_array[i].val_ms++;
-		}
-	}
+	ms_var++;
 }
-
 
 /*
 @ brief : simple delay function, no need to create timer for use. Just stops code execution on specified amount of time.
@@ -104,36 +114,96 @@ void SysTick_Handler(void)
 */
 void delay_ms(uint32_t ms)
 {
-	uint32_t end = delay_var + ms;
-	while(delay_var != end)
+	volatile uint32_t end = ms_var + ms;
+	while(ms_var != end)
 		asm("nop");
 }
 
 /*
-@ brief : Function for starting specified timer with defined parameters. Cycles can be infinite (pass TIMER_CYCLES_INFINITE constant in cycles param)
-@ param : Timer pointer, milliseconds for timeout, amount of cycles, callback function pt, callback parameters pt.
+@ brief : delay function what used DWT register and free running core clock counter,
+@		 no need to create timer for use. Just stops code execution on specified amount of time.
+@ param : microseconds
 @ retval : none
+*/
+void delay_us(uint16_t us)
+{
+	volatile uint32_t core_ticks_fin = (*DWT_CYCCNT) + (us * 72);
+	while ((core_ticks_fin - (*DWT_CYCCNT)) < (us * 72))
+		asm("nop");
+}
+
+/*
+@ brief : Function for starting/restarting timer with defined parameters. Cycles can be infinite (pass TIMER_CYCLES_INFINITE constant in cycles param)
+@ param : Timer pointer, milliseconds for timeout, amount of cycles, callback function pt, callback parameters pt.
+@ retval : timer ptr what was started or restarted, NULL when timer is not used or bad pointer
 */
 timer_t * timer_start(timer_t * timer, uint32_t ms, uint32_t cycles, timer_callback_t callback_function, void * callback_fn_param)
 {
-	timer->val_ms = 0;
-	timer->end_val_ms = ms;
-	timer->cycles = cycles;
-	timer->fn = callback_function;
-	timer->callback_param = callback_fn_param;
-	timer->state = TIMER_TICKING;
-	return timer;
+	if (timer->state)
+	{
+		timer->val_ms = ms;
+		timer->end_val_ms = ms + ms_var;
+		timer->cycles = cycles;
+		timer->fn = callback_function;
+		timer->callback_param = callback_fn_param;
+		timer->state = TIMER_RUNNING;
+		return timer;
+	}
+	else
+		return NULL;
 }
 
 /*
 @ brief : Stop timer function
 @ param : timer struct pointer what should be stopped
-@ retval : timer struct pointer what was stopped
+@ retval : timer struct pointer what was stopped, or NULL if timer not used or bad pointer
 */
 timer_t * timer_stop(timer_t * timer)
 {
-	timer->state = TIMER_IDLE;
-	return timer;
+	if(timer->state)
+	{
+		timer->state = TIMER_IDLE;
+		return timer;
+	}
+	else
+		return NULL;
+}
+
+/*
+@ brief : Pause timer function.
+@ param : timer struct pointer what should be paused
+@ retval : timer struct pointer what was paused, if timer ptr is wrong or timer end_val_ms expired return NULL
+*/
+timer_t * timer_pause(timer_t * timer)
+{
+	if(timer->state != TIMER_RUNNING)
+	{
+		if (timer->elapsed_time_ms >= timer->val_ms)
+		{
+			return NULL;
+		}
+		timer->elapsed_time_ms = timer->end_val_ms - ms_var;
+		timer->state = TIMER_PAUSED;
+		return timer;
+	}
+	else
+		return NULL;
+}
+
+/*
+@ brief : Continue timer function
+@ param : timer struct pointer what should be continued
+@ retval : timer struct pointer what was continued or NULL if timer is not stopped.
+*/
+timer_t * timer_continue(timer_t * timer)
+{
+	if(timer->state == TIMER_PAUSED)
+	{
+		timer->end_val_ms = (timer->val_ms - timer->elapsed_time_ms) + ms_var;
+		return timer;
+	}
+	else
+		return NULL;
 }
 
 /*
@@ -165,4 +235,9 @@ void ClockInit72MhzHSE()
 	while((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_1)		//wait till PLL is used
 	{/*status code*/}
 
+}
+
+uint32_t get_core_ticks(void)
+{
+	return (*DWT_CYCCNT);
 }

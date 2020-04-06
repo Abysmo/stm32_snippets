@@ -36,7 +36,7 @@ static void receiver_mode(void);
 static void transmitter_mode(void);
 uint8_t onewire_read (void);
 void onewire_write (uint8_t data);
-void delay_us(uint16_t us);
+//static void delay_us(uint16_t us);
 float onewire_get_temp_c (void);
 void ds18b20_setup(uint8_t sensor_resolution);
 uint8_t set_ds18b20_ADC_resolution(uint8_t resolution);

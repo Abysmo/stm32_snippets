@@ -1,7 +1,7 @@
 #include "ds18b20.h"
 
 
-void delay_us(uint16_t us)
+static void delay_us(uint16_t us)
 {
 	volatile uint32_t core_ticks_fin = (*DWT_CYCCNT) + (us * 72);
 	while ((core_ticks_fin - (*DWT_CYCCNT)) < (us * 72));

@@ -1,7 +1,7 @@
 #include "at24c256.h"
 
 
-#define I2C_TYPEDEF				I2C1
+#define I2C_TYPEDEF					I2C1
 #define I2C_GPIO_SDA				GPIO_Pin_7
 #define I2C_GPIO_SCL				GPIO_Pin_6
 #define I2C_PORT_TYPEDEF			GPIOB
@@ -40,23 +40,53 @@ uint8_t EEPROM_AT24C256_ReadByte(uint8_t dev_address, uint16_t mem_address)
 
 	I2C_AcknowledgeConfig(I2C_TYPEDEF,ENABLE);
 
-	I2C_GenerateSTART(I2C_TYPEDEF,ENABLE);
-	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_MODE_SELECT));
+//	I2C_GenerateSTART(I2C_TYPEDEF,ENABLE);
+//	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_MODE_SELECT));
+//
+//	I2C_Send7bitAddress(I2C_TYPEDEF, dev_address, I2C_Direction_Transmitter);
+//	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
 
-	I2C_Send7bitAddress(I2C_TYPEDEF, dev_address, I2C_Direction_Transmitter);
-	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
+	/*acknowledge polling*/
+	do
+	{
+		I2C_GenerateSTART(I2C_TYPEDEF,ENABLE);
+		while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_MODE_SELECT));
 
-	I2C_SendData(I2C1,(mem_address >> 8));
+		I2C_Send7bitAddress(I2C_TYPEDEF, dev_address, I2C_Direction_Transmitter);
+		for(uint16_t i = 0; i < 10000; i++)
+			if(I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED))
+				goto ACK_OK;
+	}
+	while (1);
+	ACK_OK:
+	/*acknowledge OK*/
+
+	I2C_SendData(I2C_TYPEDEF,(mem_address >> 8));
 	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
 
-	I2C_SendData(I2C1,(uint8_t)(mem_address));
+	I2C_SendData(I2C_TYPEDEF,(uint8_t)(mem_address));
 	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
 
-	I2C_GenerateSTART(I2C_TYPEDEF,ENABLE);
-	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_MODE_SELECT));
+//	I2C_GenerateSTART(I2C_TYPEDEF,ENABLE);
+//	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_MODE_SELECT));
+//
+//	I2C_Send7bitAddress(I2C_TYPEDEF, dev_address, I2C_Direction_Receiver);
+//	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED));
 
-	I2C_Send7bitAddress(I2C_TYPEDEF, dev_address, I2C_Direction_Receiver);
-	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED));
+	/*acknowledge polling*/
+	do
+	{
+		I2C_GenerateSTART(I2C_TYPEDEF,ENABLE);
+		while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_MODE_SELECT));
+
+		I2C_Send7bitAddress(I2C_TYPEDEF, dev_address, I2C_Direction_Receiver);
+		for(uint16_t i = 0; i < 10000; i++)
+			if(I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED))
+				goto ACK_OK1;
+	}
+	while (1);
+	ACK_OK1:
+	/*acknowledge OK*/
 
 	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_BYTE_RECEIVED));
 	uint8_t readedbyte = I2C_ReceiveData(I2C_TYPEDEF);
@@ -75,23 +105,53 @@ uint8_t EEPROM_AT24C256_ReadArray(uint8_t dev_address, uint16_t mem_address, uin
 
 	I2C_AcknowledgeConfig(I2C_TYPEDEF,ENABLE);
 
-	I2C_GenerateSTART(I2C_TYPEDEF,ENABLE);
-	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_MODE_SELECT));
+//	I2C_GenerateSTART(I2C_TYPEDEF,ENABLE);
+//	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_MODE_SELECT));
+//
+//	I2C_Send7bitAddress(I2C_TYPEDEF, dev_address, I2C_Direction_Transmitter);
+//	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
 
-	I2C_Send7bitAddress(I2C_TYPEDEF, dev_address, I2C_Direction_Transmitter);
-	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
+	/*acknowledge polling*/
+	do
+	{
+		I2C_GenerateSTART(I2C_TYPEDEF,ENABLE);
+		while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_MODE_SELECT));
 
-	I2C_SendData(I2C1,(mem_address >> 8));
+		I2C_Send7bitAddress(I2C_TYPEDEF, dev_address, I2C_Direction_Transmitter);
+		for(uint16_t i = 0; i < 10000; i++)
+			if(I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED))
+				goto ACK_OK;
+	}
+	while (1);
+	ACK_OK:
+	/*acknowledge OK*/
+
+	I2C_SendData(I2C_TYPEDEF,(mem_address >> 8));
 	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
 
-	I2C_SendData(I2C1,(uint8_t)(mem_address));
+	I2C_SendData(I2C_TYPEDEF,(uint8_t)(mem_address));
 	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
 
-	I2C_GenerateSTART(I2C_TYPEDEF,ENABLE);
-	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_MODE_SELECT));
+//	I2C_GenerateSTART(I2C_TYPEDEF,ENABLE);
+//	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_MODE_SELECT));
+//
+//	I2C_Send7bitAddress(I2C_TYPEDEF, dev_address, I2C_Direction_Receiver);
+//	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED));
 
-	I2C_Send7bitAddress(I2C_TYPEDEF, dev_address, I2C_Direction_Receiver);
-	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED));
+	/*acknowledge polling*/
+	do
+	{
+		I2C_GenerateSTART(I2C_TYPEDEF,ENABLE);
+		while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_MODE_SELECT));
+
+		I2C_Send7bitAddress(I2C_TYPEDEF, dev_address, I2C_Direction_Receiver);
+		for(uint16_t i = 0; i < 10000; i++)
+			if(I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED))
+				goto ACK_OK1;
+	}
+	while (1);
+	ACK_OK1:
+	/*acknowledge OK*/
 
 	for(uint16_t i = data_len; i > 0; i--, data_buffer++)
 	{
@@ -111,19 +171,34 @@ uint8_t EEPROM_AT24C256_WriteByte(uint8_t dev_address, uint16_t mem_address, uin
 	if(mem_address > EEPROM_AT24C256_LAST_BYTE_ADDR)
 		return 0;
 
-	I2C_GenerateSTART(I2C_TYPEDEF,ENABLE);
-	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_MODE_SELECT));
+//	I2C_GenerateSTART(I2C_TYPEDEF,ENABLE);
+//	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_MODE_SELECT));
+//
+//	I2C_Send7bitAddress(I2C_TYPEDEF, dev_address, I2C_Direction_Transmitter);
+//	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
 
-	I2C_Send7bitAddress(I2C_TYPEDEF, dev_address, I2C_Direction_Transmitter);
-	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
+	/*acknowledge polling*/
+	do
+	{
+		I2C_GenerateSTART(I2C_TYPEDEF,ENABLE);
+		while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_MODE_SELECT));
 
-	I2C_SendData(I2C1,mem_address >> 8);
+		I2C_Send7bitAddress(I2C_TYPEDEF, dev_address, I2C_Direction_Transmitter);
+		for(uint16_t i = 0; i < 10000; i++)
+			if(I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED))
+				goto ACK_OK;
+	}
+	while (1);
+	ACK_OK:
+	/*acknowledge OK*/
+
+	I2C_SendData(I2C_TYPEDEF,mem_address >> 8);
 	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
 
-	I2C_SendData(I2C1,mem_address);
+	I2C_SendData(I2C_TYPEDEF,mem_address);
 	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
 
-	I2C_SendData(I2C1,byte);
+	I2C_SendData(I2C_TYPEDEF,byte);
 	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
 
 	I2C_GenerateSTOP(I2C_TYPEDEF,ENABLE);
@@ -140,21 +215,36 @@ uint8_t EEPROM_AT24C256_WritePage(uint8_t dev_address, uint16_t mem_address, uin
 	(mem_address > EEPROM_AT24C256_LAST_PAGE_ADDR)) /*page address validation and for avoiding data alteration */
 		return 0;
 
-	I2C_GenerateSTART(I2C_TYPEDEF,ENABLE);
-	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_MODE_SELECT));
+//	I2C_GenerateSTART(I2C_TYPEDEF,ENABLE);
+//	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_MODE_SELECT));
+//
+//	I2C_Send7bitAddress(I2C_TYPEDEF, dev_address, I2C_Direction_Transmitter);
+//	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
 
-	I2C_Send7bitAddress(I2C_TYPEDEF, dev_address, I2C_Direction_Transmitter);
-	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
+	/*acknowledge polling*/
+	do
+	{
+		I2C_GenerateSTART(I2C_TYPEDEF,ENABLE);
+		while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_MODE_SELECT));
 
-	I2C_SendData(I2C1,mem_address >> 8);
+		I2C_Send7bitAddress(I2C_TYPEDEF, dev_address, I2C_Direction_Transmitter);
+		for(uint16_t i = 0; i < 10000; i++)
+			if(I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED))
+				goto ACK_OK;
+	}
+	while (1);
+	ACK_OK:
+	/*acknowledge OK*/
+
+	I2C_SendData(I2C_TYPEDEF,mem_address >> 8);
 	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
 
-	I2C_SendData(I2C1,mem_address);
+	I2C_SendData(I2C_TYPEDEF,mem_address);
 	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
 
 	for(uint8_t i = data_len; i > 0; i--, data++)
 	{
-		I2C_SendData(I2C1, *data);
+		I2C_SendData(I2C_TYPEDEF, *data);
 		while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
 	}
 
@@ -162,10 +252,62 @@ uint8_t EEPROM_AT24C256_WritePage(uint8_t dev_address, uint16_t mem_address, uin
 	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
 
 	return data_len;
-
 }
 
+uint8_t EEPROM_AT24C256_PageClear(uint8_t dev_address, uint16_t mem_address, uint8_t clear_byte)
+{
+
+	if(((mem_address) % EEPROM_AT24C256_PAGE_SIZE_BYETES) || /*page address aligned to 64bytes */
+	(mem_address > EEPROM_AT24C256_LAST_PAGE_ADDR)) /*page address validation and for avoiding data alteration */
+		return 0;
 
 
+	//no polling
+//	I2C_GenerateSTART(I2C_TYPEDEF,ENABLE);
+//	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_MODE_SELECT));
+//
+//	I2C_Send7bitAddress(I2C_TYPEDEF, dev_address, I2C_Direction_Transmitter);
+//	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED));
 
+	/*acknowledge polling*/
+	do
+	{
+		I2C_GenerateSTART(I2C_TYPEDEF,ENABLE);
+		while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_MODE_SELECT));
+
+		I2C_Send7bitAddress(I2C_TYPEDEF, dev_address, I2C_Direction_Transmitter);
+		for(uint16_t i = 0; i < 10000; i++)
+			if(I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED))
+				goto ACK_OK;
+	}
+	while (1);
+	ACK_OK:
+	/*acknowledge polling ok*/
+
+	I2C_SendData(I2C_TYPEDEF,mem_address >> 8);
+	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+
+	I2C_SendData(I2C_TYPEDEF,mem_address);
+	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+
+	for(uint8_t i = 0; i < EEPROM_AT24C256_PAGE_SIZE_BYETES; i++)
+	{
+		I2C_SendData(I2C_TYPEDEF, clear_byte);
+		while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+	}
+
+	I2C_GenerateSTOP(I2C_TYPEDEF,ENABLE);
+	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_BYTE_TRANSMITTED));
+
+	return EEPROM_AT24C256_PAGE_SIZE_BYETES;
+}
+
+void EEPROM_AT24C256_BusSoftwareReset(void)
+{
+	I2C_GenerateSTART(I2C_TYPEDEF,ENABLE);
+	while (!I2C_CheckEvent(I2C_TYPEDEF, I2C_EVENT_MASTER_MODE_SELECT));
+	I2C_SendData(I2C_TYPEDEF, 0xFF);
+	I2C_GenerateSTART(I2C_TYPEDEF,ENABLE);
+	I2C_GenerateSTOP(I2C_TYPEDEF,ENABLE);
+}
 
