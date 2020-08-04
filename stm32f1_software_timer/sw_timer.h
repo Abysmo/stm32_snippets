@@ -1,5 +1,5 @@
-#ifndef TIMER_CTL_H
-#define TIMER_CTL_H
+#ifndef SW_TIMER_H
+#define SW_TIMER_H
 
 #include "stm32f10x.h"
 #include "stddef.h"
@@ -12,7 +12,7 @@
 #define MAX_TIMERS					8 /*amount of sw timers*/
 
 
-
+/*free running instruction counter registers addresses*/
 #define DWT_CONTROL					((volatile uint32_t *)0xE0001000)
 #define DWT_CYCCNT					((volatile uint32_t *)0xE0001004)
 #define DEMCR						((volatile uint32_t *)0xE000EDFC)
@@ -24,7 +24,7 @@
 #define TIMER_RUNNING				2
 #define TIMER_PAUSED				3
 /*infinite cycles constant*/
-#define TIMER_CYCLES_INFINITE		0xFF
+#define TIMER_CYCLES_INFINITE		0xFFFFFFFF
 
 
 typedef void (*timer_callback_t)(void * param);
@@ -36,8 +36,8 @@ typedef struct
 	uint32_t elapsed_time_ms;		/* elapsed time before pause */
 	uint32_t cycles;				/* amount of event cycles */
 	uint8_t state;					/* current timer state */
-	timer_callback_t fn;					/* callback pointer */
-	void * callback_param;					/* callback param pointer */
+	timer_callback_t fn;			/* callback pointer */
+	void * callback_param;			/* callback param pointer */
 }timer_t; /*timer struct*/
 
 
@@ -47,15 +47,16 @@ timer_t timers_array[MAX_TIMERS]; /*timers array*/
 
 void ClockInit72MhzHSE(void);
 void timers_init(void);
-timer_t * add_timer(void);
-timer_t * free_timer(timer_t * timer);
 void timers_handler();
 void delay_ms(uint32_t ms);
 void delay_us(uint16_t us);
+timer_t * add_timer(void);
+timer_t * free_timer(timer_t * timer);
 timer_t * timer_start(timer_t * timer, uint32_t ms, uint32_t cycles, timer_callback_t callback_function, void * callback_fn_param);
 timer_t * timer_stop(timer_t * timer);
 timer_t * timer_pause(timer_t * timer);
 timer_t * timer_continue(timer_t * timer);
+timer_t * timer_delay(timer_t * timer, uint16_t delay_ms); // dont work as planned
 uint32_t get_core_ticks(void);
 
 

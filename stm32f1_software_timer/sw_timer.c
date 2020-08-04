@@ -20,8 +20,7 @@ void timers_init(void)
 	/* Reset cycle counter */
 	*DWT_CYCCNT = 0;
 	/* enable cycle counter */
-	*DWT_CONTROL = *DWT_CONTROL | 1 ;
-
+	*DWT_CONTROL |= 1 ;
 }
 
 /*
@@ -172,13 +171,13 @@ timer_t * timer_stop(timer_t * timer)
 /*
 @ brief : Pause timer function.
 @ param : timer struct pointer what should be paused
-@ retval : timer struct pointer what was paused, if timer ptr is wrong or timer end_val_ms expired return NULL
+@ retval : timer struct pointer what was paused, if timer is not running or timer end_val_ms expired return NULL
 */
 timer_t * timer_pause(timer_t * timer)
 {
-	if(timer->state != TIMER_RUNNING)
+	if(timer->state == TIMER_RUNNING)
 	{
-		if (timer->elapsed_time_ms >= timer->val_ms)
+		if (ms_var >= timer->end_val_ms)
 		{
 			return NULL;
 		}
@@ -200,6 +199,24 @@ timer_t * timer_continue(timer_t * timer)
 	if(timer->state == TIMER_PAUSED)
 	{
 		timer->end_val_ms = (timer->val_ms - timer->elapsed_time_ms) + ms_var;
+		timer->state = TIMER_RUNNING;
+		return timer;
+	}
+	else
+		return NULL;
+}
+
+/*
+@ brief : Timer delay function, similar to pause, but unpausing automatically after defined
+@ 			amount of time (delay_ms parameter). Briefly - add defined time to end value of the timer.
+@ param : timer struct pointer what should be delayed
+@ retval : timer struct pointer what was delayed or NULL if timer is not counting.
+*/
+timer_t * timer_delay(timer_t * timer, uint16_t delay_ms)
+{
+	if(timer->state == TIMER_RUNNING)
+	{
+		timer->end_val_ms = ms_var + delay_ms;
 		return timer;
 	}
 	else
@@ -215,25 +232,25 @@ void ClockInit72MhzHSE()
 {
 	RCC_DeInit();
 
-	RCC->CR |= RCC_CR_HSEON;								//enable external clock (8 Mhz)
-	while (!(RCC->CR & RCC_CR_HSERDY)) {/*status code*/}; 	//wait for clock rdy
+	RCC->CR |= RCC_CR_HSEON;											//enable external clock (8 Mhz)
+	while (!(RCC->CR & RCC_CR_HSERDY)) {/*HSE error handler code*/}; 	//wait for clock rdy
 
-	RCC->CFGR |= RCC_CFGR_HPRE_DIV1  |						//AHB prescaler = 1
-	             RCC_CFGR_PPRE2_DIV1 |						//AHB2 = sysclk
-	             RCC_CFGR_PPRE1_DIV2;						//AHB1 = sysclk \ 2 (AHB1 36Mhz MAX)
+	RCC->CFGR |= RCC_CFGR_HPRE_DIV1  |									//AHB prescaler = 1
+	             RCC_CFGR_PPRE2_DIV1 |									//AHB2 = sysclk
+	             RCC_CFGR_PPRE1_DIV2;									//AHB1 = sysclk \ 2 (AHB1 36Mhz MAX)
 
 	RCC->CFGR &= ~RCC_CFGR_PLLMULL;
-	RCC->CFGR |= 	RCC_CFGR_PLLSRC_HSE 	|       		//PLL source = HSE (8 Mhz)
-					RCC_CFGR_PLLXTPRE_HSE	|				//PLL Prescaler = 1
-					RCC_CFGR_PLLMULL9;						//8 * 9 = 72 MHz
+	RCC->CFGR |= 	RCC_CFGR_PLLSRC_HSE 	|       					//PLL source = HSE (8 Mhz)
+					RCC_CFGR_PLLXTPRE_HSE	|							//PLL Prescaler = 1
+					RCC_CFGR_PLLMULL9;									//8 * 9 = 72 MHz
 
-	RCC->CR |= RCC_CR_PLLON;                      			//enable PLL
-	while((RCC->CR & RCC_CR_PLLRDY) == 0) {/*status code*/} //wait till PLL is ready
+	RCC->CR |= RCC_CR_PLLON;                      						//enable PLL
+	while((RCC->CR & RCC_CR_PLLRDY) == 0) {/*status code*/} 			//wait till PLL is ready
 
-	RCC->CFGR &= ~RCC_CFGR_SW;								//clear SW bits
-	RCC->CFGR |= RCC_CFGR_SW_PLL;               			//select PLL as system clock
-	while((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_1)		//wait till PLL is used
-	{/*status code*/}
+	RCC->CFGR &= ~RCC_CFGR_SW;											//clear SW bits
+	RCC->CFGR |= RCC_CFGR_SW_PLL;               						//select PLL as system clock
+	while((RCC->CFGR & RCC_CFGR_SWS) != RCC_CFGR_SWS_1)					//wait till PLL is used
+	{/*PLL error handler code*/}
 
 }
 
