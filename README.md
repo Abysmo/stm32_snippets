@@ -1,1 +1,1 @@
-# stm32_snippets
+# stm32_snippets (using StdPeriphLib from ST)
